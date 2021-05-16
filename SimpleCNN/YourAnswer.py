@@ -10,16 +10,10 @@ import torch.nn as nn
 
 def softmax(x):
     softmax_output = None
-    # ========================================== WRITE YOUR CODE ========================================== #
-    # Instructions: 
-    #     Implement the softmax function
-    #     Consider that the sum of the softmax output should be one
-    #     Prevent the overflow (Do not let your function output the 'NaN')
     s = np.max(x, axis=1)[:, np.newaxis]
     e_x = np.exp(x - s)
     div = np.sum(e_x, axis=1)[:, np.newaxis]
     softmax_output = e_x / div
-    # ======================================================================================================
     return softmax_output
 
 
@@ -35,20 +29,6 @@ def cross_entropy_loss(score, target, thetas, lamb):
     CE_loss = -np.sum(target * np.log(score + delta)) / batch_size
     for value in thetas.values():
         reg_loss += np.sum(np.power(value, 2)) * lamb * 0.5
-    # ========================================== WRITE YOUR CODE ========================================== #
-    # Instructions: 
-    #    Implement the cross entropy loss and regularization loss 
-    #
-    #    Cross Entropy term :
-    #        Use delta to prevent the occurence of log(0)
-    #        Consider the batch size(N)
-    #
-    #    Regularization term :
-    #        Implement the L2 Regularization
-    #        Use lamb as a regularization constant
-    #        Multiply 0.5 to the reg_loss (for the computational convenience)
-
-    # ======================================================================================================
     loss = CE_loss + reg_loss
     
     return loss
@@ -65,33 +45,19 @@ class OutputLayer:
         
     def forward(self, x, y):
     
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Compute the cross entropy loss using the softmax output
-        #    Get the approriate input (score and target) for the loss function
-        #    (Remember that the values in the forward propagation phase would be needed at the backward propagation phase)
-
         self.output_softmax = softmax(x)
         self.target_label = y
 
         self.loss = cross_entropy_loss(self.output_softmax, self.target_label, self.thetas, self.regularization)
 
-        # ======================================================================================================
         return self.loss
     
     def backward(self, dout=1):
         
         size = self.target_label.shape[0]
         dz = None
-        
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Since it is the output layer, the delta(dout) is one.
-        #    Compute the backward propagation of the output layer
-        #    (hint : Calculate the derivative of the loss with respect to the softmax output) 
 
         dz = dout * (self.output_softmax - self.target_label) / size
-        # ======================================================================================================
         
         return dz
     
@@ -105,31 +71,19 @@ class ReLU:
     def forward(self, x):
         
         self.out = None
-
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Implement ReLU function.
-        #    All the negative values should be ignored
-        #    Think which value to save for the backward propagation phase
         self.out = np.maximum(0, x)
         out = self.out
-        # ======================================================================================================
     
         return out
     
     def backward(self, dout):
     
         dx = None
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    dout is the propagation value from the upper layer
-        #    Only the points that had survived during the forward propagation should be backward propagated
         self.mask = np.copy(self.out)
         self.mask[self.out > 0] = 1
         self.mask[self.out <= 0] = 0
 
         dx = dout * self.mask
-        # ======================================================================================================
         return dx
 
 
@@ -139,31 +93,16 @@ class Sigmoid:
         self.out = None
         
     def forward(self, x):
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Implement sigmoid function
-        #    Make sure that the output is in the range of 0 to 1
-
         self.out = 1 / (1 + np.exp(-x))
         out = self.out
-        
-        # ======================================================================================================
-    
+            
         return out
     
     def backward(self, dout):
         
         dx = None
-        
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    dout is the propagation value from the upper layer
-        #    Consider the derivative of the sigmoid function
-
         sigmoid_prime = (1 - self.out) * self.out
         dx = dout * sigmoid_prime
-
-        # ======================================================================================================
         
         return dx
 
@@ -179,17 +118,8 @@ class Affine:
     def forward(self, x):
         
         out = None
-    
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Implement an Affine layer
-        #    The input should be multiplied by weight and biases need to be considered
-        #    Consider the backward propagation phase
-
         self.x = x
         out = np.dot(self.x, self.Theta) + self.b
-
-        # ======================================================================================================
     
         return out
     
@@ -197,17 +127,9 @@ class Affine:
 
         dx = None
         
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #    Compute the back-propagation value with respect to input x, weight W and bias b
-        #    You should compute not only the output of the function dx, but also the derivative dW and db
-        #    Return only the value of dx
-        #    dT and db would be used at the weight updates
-        
         dx = np.dot(dout, self.Theta.T)
         self.dT = np.dot(self.x.T, dout)
         self.db = dout.mean(axis=0) * self.x.shape[0]
-        # ======================================================================================================
         
         return dx
     
@@ -234,18 +156,10 @@ class TwoLayerNet:
 
         self.layers = OrderedDict()
         
-        # ========================================== WRITE YOUR CODE ========================================== #
-        # Instructions :
-        #     Implement two layers net
-        #     Model Structure would be like
-        #       " Input => Fully Connected => ReLU => Fully Connected => OutputLayer "
-        #     Use the classes(Affine, ReLU, OutputLayer) you had defined above
-
         self.layers['Affine1'] = Affine(self.thetas['T1'], self.params['b1'])
         self.layers['ReLu'] = ReLU()
         self.layers['Affine2'] = Affine(self.thetas['T2'], self.params['b2'])
         
-        # ======================================================================================================
         self.lastLayer = OutputLayer(self.thetas, self.reg)
 
     def predict(self, x):
@@ -304,12 +218,6 @@ class TwoLayerNet:
         if self.reg != 0.0:
             grads['T1'] += self.reg * self.layers['Affine1'].Theta
             grads['T2'] += self.reg * self.layers['Affine2'].Theta
-
-            # ========================================== WRITE YOUR CODE ========================================== #
-            # Instructions :
-            #    Implement the effect of regularization to the gradient
-            #    Consider which value should be regularized
-            # ===================================================================================================== #
 
         return grads
 
@@ -385,32 +293,6 @@ class ThreeLayerNet:
             grads['T3'] += self.reg * self.layers['Affine3'].Theta
 
         return grads
-    # ========================================== WRITE YOUR CODE ========================================== #
-    # Instructions :
-    #     Implement three layers net
-    #
-    #    __init__() :
-    #        A function that initialize Weight and bias
-    #        You should construct a model using the initialized Weight and bias
-    #
-    #        Model Structure would be like
-    #            " Input => Fully Connected => ReLU => Fully Connected => ReLU => Fully Connected => OutputLayer "
-    #        Use the classes(Affine, ReLU, OutputLayer) you had defined above
-    #        Use hiden_size1, hidden_size2 as variable of the Hidden Layer 
-    #    
-    #    predict() :
-    #        A function that performs forward propagation of Neural network about the Input data(x)
-    #    
-    #    loss() : 
-    #        A function that computes the Loss using the forward propagation results of Neural network with respect to the Input data(x)
-    #    
-    #    accuracy() :
-    #        A function that computes the accuracy using the Output data and True label
-    #    
-    #
-    #    gradient():
-    #        A function that performs backward propagation of Neural network using the Input data (x) and True label(y)
-    # ===================================================================================================== #
 
 
 class simple_CNN(nn.Module):
@@ -432,14 +314,6 @@ class simple_CNN(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(4096, num_class),
 
-            # ========================================== WRITE YOUR CODE ========================================== #
-            # Instructions :
-            #    Construct a simple CNN model using the pytorch module
-            #    Use torch.nn.Sequential to stack the layers
-            #
-            #    Use 4096, 4096, n(number of classes) Linear layers
-            #    Use ReLU activation.
-            # ===================================================================================================== #
         )
 
     def forward(self, x):
@@ -513,27 +387,4 @@ class deep_CNN(nn.Module):
         output = self.classifier(output)
         return output
 
-    # ========================================== WRITE YOUR CODE ========================================== #
-    # Instructions :
-    #    Construct a deeper CNN model
-    #    You have two choices
-    #        1. Build a model as you wish
-    #        2. Build a model following the instructions below :
-    #
-    #             Feature extraction :
-    #
-    #                Use Batch Normalization layer, ReLU activation and Max Pooling(MP) layer 
-    #                    and place them appropriately within the convolution layers 
-    #                Use (64-64)-MP-(128-128)-MP-(256-256)-MP-(512-512)-MP-(512-512) convolution layers with kernel size 3 and padding 1
-    #                Inferring VGG-13 would be helpful
-    #         
-    #             Classification:
-    #
-    #                 Use 4096, 4096, n(number of classes) Linear layers
-    #
-    #                 Use Dropout layer with probability 0.5 and ReLU activation.
-    # 
-    #    Whatever your choice is, score would be the same as long as the model achieves accuracy higher than 60%
-    '''    DO NOT JUST COPY THE CODE FROM THE INTERNET 
-            (Inferring them and rewriting it in your own words are fine) '''
-    # ===================================================================================================== #
+ 
